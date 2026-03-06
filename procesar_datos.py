@@ -103,7 +103,7 @@ def calcular_tendencia(unicos: dict, meses_presentes: list) -> list:
 def calcular_especialidades(data: list[dict]) -> list:
     esp = defaultdict(int)
     for r in data:
-        esp[r["Especializació"]] += int(r["Valor"] or 0)
+        esp[r["Especialización"]] += int(r["Valor"] or 0)
     return [{"nombre": k, "citas": v}
             for k, v in sorted(esp.items(), key=lambda x: -x[1]) if v > 0]
 

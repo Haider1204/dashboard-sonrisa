@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Estadísticas — Fundación Operación Sonrisa</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ── Variables ────────────────────────────────── */
@@ -85,6 +86,66 @@ header{
 .chip.active{border-color:var(--azul2);background:#EBF2FF;color:var(--azul2);font-weight:600}
 .chip.all-chip.active{border-color:var(--azul);background:var(--azul);color:white}
 .sep-v{width:1px;height:20px;background:var(--borde);margin:0 4px}
+
+/* ── Select año ───────────────────────────────── */
+.año-select-wrap{position:relative;display:flex;align-items:center}
+.año-select{
+  appearance:none;-webkit-appearance:none;
+  border:1.5px solid var(--borde);border-radius:8px;
+  padding:5px 30px 5px 12px;font-size:12px;font-weight:600;
+  color:var(--azul);background:var(--crema);cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  transition:border-color .15s,background .15s;
+  outline:none;
+}
+.año-select:hover,.año-select:focus{border-color:var(--azul2);background:#EBF2FF}
+.año-select-arrow{
+  position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  pointer-events:none;color:var(--azul2);font-size:10px;
+}
+
+/* ── Mapa Colombia ────────────────────────────── */
+.map-container{position:relative;width:100%;min-height:420px}
+#colombia-map{width:100%;height:420px}
+#colombia-map svg{width:100%;height:100%}
+.dept-path{
+  stroke:white;stroke-width:0.8;
+  cursor:pointer;transition:fill .18s,stroke-width .1s;
+}
+.dept-path:hover{stroke-width:2;stroke:#F47920}
+.dept-path.selected{stroke:#F47920!important;stroke-width:2.5!important}
+
+/* Tooltip mapa */
+#map-tooltip{
+  position:fixed;background:var(--azul);color:white;
+  border-radius:10px;padding:12px 16px;
+  font-size:12px;pointer-events:none;z-index:200;
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+  min-width:180px;opacity:0;transition:opacity .15s;
+  border:1px solid rgba(255,255,255,.12);
+}
+#map-tooltip.visible{opacity:1}
+#map-tooltip h4{font-family:'Fraunces',serif;font-size:14px;margin-bottom:8px;color:var(--oro)}
+#map-tooltip .tt-row{display:flex;justify-content:space-between;gap:16px;margin-bottom:4px}
+#map-tooltip .tt-label{color:rgba(255,255,255,.6);font-size:11px}
+#map-tooltip .tt-val{font-weight:700;font-size:12px}
+
+/* Panel lateral mapa */
+.map-side{display:flex;flex-direction:column;gap:12px;justify-content:center}
+.map-dept-sel{
+  background:var(--crema);border-radius:10px;padding:16px;
+  border:1.5px solid var(--borde);
+}
+.map-dept-sel h4{font-family:'Fraunces',serif;font-size:13px;color:var(--azul);margin-bottom:10px}
+.map-stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--borde)}
+.map-stat-row:last-child{border-bottom:none}
+.map-stat-label{font-size:11px;color:var(--gris)}
+.map-stat-val{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:var(--azul2)}
+.map-hint{font-size:11px;color:#bbb;text-align:center;padding:20px;font-style:italic}
+
+/* Grid mapa */
+.grid-map{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:900px){.grid-map{grid-template-columns:1fr}}
 
 /* ── Main ─────────────────────────────────────── */
 main{padding:24px 32px 40px;max-width:1400px;margin:0 auto}
@@ -249,6 +310,14 @@ main{padding:24px 32px 40px;max-width:1400px;margin:0 auto}
 
 <!-- Filtros -->
 <div class="filtros">
+  <span class="filtro-label">Año</span>
+  <div class="año-select-wrap">
+    <select class="año-select" id="filtro-año" onchange="onAñoChange(this.value)">
+      <option value="all">Todos los años</option>
+    </select>
+    <span class="año-select-arrow">▾</span>
+  </div>
+  <div class="sep-v"></div>
   <span class="filtro-label">Trimestre</span>
   <div id="filtros-trim"></div>
   <div class="sep-v"></div>
@@ -315,21 +384,33 @@ main{padding:24px 32px 40px;max-width:1400px;margin:0 auto}
     <div class="trim-grid" id="trim-grid"></div>
   </div>
 
-  <!-- Gráfico de barras agrupadas trimestral -->
-  <div class="grid-2b">
+  <!-- Mapa de Colombia -->
+  <div class="section-label">Cobertura Geográfica — Mapa de Colombia</div>
+  <div class="grid-map">
     <div class="card fade-in">
-      <div class="card-title">📉 Métricas por Trimestre <span class="card-badge">Barras agrupadas</span></div>
-      <div class="card-sub">Comparación de indicadores entre trimestres</div>
-      <div class="chart-wrap"><canvas id="chart-trimestral"></canvas></div>
+      <div class="card-title">🗺️ Mapa de Cobertura por Departamento <span class="card-badge">Interactivo</span></div>
+      <div class="card-sub">Haz clic o pasa el cursor sobre un departamento para ver sus datos</div>
+      <div class="map-container">
+        <div id="colombia-map"></div>
+      </div>
     </div>
-    <div class="card fade-in">
-      <div class="card-title">🔬 Comunidad Vulnerable <span class="card-badge">Resumen</span></div>
-      <div class="card-sub">Migrantes e indígenas en el período</div>
-      <div class="chart-wrap" style="margin-top:8px"><canvas id="chart-comunidad-pie"></canvas></div>
+    <div class="map-side">
+      <div class="card fade-in map-dept-sel" id="map-panel">
+        <h4>📍 Selecciona un departamento</h4>
+        <div class="map-hint">Haz clic sobre cualquier departamento del mapa para ver sus estadísticas aquí.</div>
+      </div>
+      <div class="card fade-in">
+        <div class="card-title">🗺️ Departamentos <span class="card-badge">Ranking</span></div>
+        <div class="card-sub">Pacientes únicos por programa</div>
+        <div class="dept-table" id="dept-table"></div>
+      </div>
     </div>
   </div>
 
 </main>
+
+<!-- Tooltip flotante del mapa -->
+<div id="map-tooltip"></div>
 
 <script>
 // ── Colores ────────────────────────────────────────────────────────────────
@@ -347,10 +428,13 @@ Chart.defaults.plugins.legend.display = false;
 
 // ── Estado ─────────────────────────────────────────────────────────────────
 let DATA = null;
+let filtroAño  = 'all';
 let filtroTrim = 'all';
-let filtroDepto = 'all';
+let filtroDepto= 'all';
+let charts = {};
+let mapDeptSelected = null;
 
-// ── Carga de datos ─────────────────────────────────────────────────────────
+// ── Carga ──────────────────────────────────────────────────────────────────
 async function cargarDatos() {
   try {
     const res = await fetch('data.json?t=' + Date.now());
@@ -362,41 +446,61 @@ async function cargarDatos() {
   }
 }
 
-// ── Filtrado ───────────────────────────────────────────────────────────────
+// ── Filtrado con cascada año → trimestre → depto ───────────────────────────
+function getAñosDisponibles() {
+  return [...new Set(DATA.raw_por_año ? Object.keys(DATA.raw_por_año) : [])].sort();
+}
+
+function getTrimestresDeAño(año) {
+  if (!DATA.por_año || año === 'all') return DATA.trimestres;
+  return DATA.por_año[año]?.trimestres || DATA.trimestres;
+}
+
+function getDeptosDeAño(año) {
+  if (!DATA.por_año || año === 'all') return DATA.departamentos;
+  return DATA.por_año[año]?.departamentos || DATA.departamentos;
+}
+
 function filtrarDatos() {
   if (!DATA) return DATA;
-  let tend = DATA.tendencia;
-  let deptos = DATA.departamentos;
-  let esps = DATA.especialidades;
-  let trims = DATA.trimestres;
-  let kpis = { ...DATA.kpis };
-  let dem = { ...DATA.demografia };
 
-  // Si hay filtro de trimestre, filtrar tendencia y recalcular
+  // Base según año seleccionado
+  const base = (filtroAño !== 'all' && DATA.por_año?.[filtroAño])
+    ? DATA.por_año[filtroAño]
+    : DATA;
+
+  let tend   = base.tendencia      || DATA.tendencia;
+  let deptos = base.departamentos  || DATA.departamentos;
+  let trims  = base.trimestres     || DATA.trimestres;
+  let esps   = base.especialidades || DATA.especialidades;
+  let kpis   = { ...(base.kpis    || DATA.kpis) };
+  let dem    = { ...(base.demografia || DATA.demografia) };
+
+  // Filtro trimestre
   if (filtroTrim !== 'all') {
-    const trimInfo = DATA.trimestres.find(t => t.trimestre === filtroTrim);
-    const mesesDelTrim = getMesesDeTrimestre(filtroTrim);
-    tend = tend.filter(t => mesesDelTrim.includes(t.mes));
+    const trimInfo = trims.find(t => t.trimestre === filtroTrim);
+    const meses = getMesesDeTrimestre(filtroTrim);
+    tend = tend.filter(t => meses.includes(t.mes));
     if (trimInfo) {
-      kpis.total_pacientes    = trimInfo.unicos;
-      kpis.total_operados     = trimInfo.operados;
+      kpis.total_pacientes      = trimInfo.unicos;
+      kpis.total_operados       = trimInfo.operados;
       kpis.total_procedimientos = trimInfo.procedimientos;
-      kpis.total_nuevos       = trimInfo.nuevos;
+      kpis.total_nuevos         = trimInfo.nuevos;
     }
   }
 
+  // Filtro depto
   if (filtroDepto !== 'all') {
-    deptos = deptos.filter(d => d.depto === filtroDepto);
-    // Recalcular kpis solo de ese depto
-    const d = deptos[0];
+    const d = deptos.find(x => x.depto === filtroDepto);
+    deptos = d ? [d] : [];
     if (d) {
-      kpis.total_pacientes     = d.unicos;
-      kpis.total_operados      = d.operados;
-      kpis.total_procedimientos= d.procedimientos;
+      kpis.total_pacientes      = d.unicos;
+      kpis.total_operados       = d.operados;
+      kpis.total_procedimientos = d.procedimientos;
     }
   }
 
-  return { ...DATA, tendencia: tend, departamentos: deptos, especialidades: esps, trimestres: trims, kpis, demografia: dem };
+  return { ...DATA, tendencia:tend, departamentos:deptos, especialidades:esps, trimestres:trims, kpis, demografia:dem };
 }
 
 function getMesesDeTrimestre(q) {
@@ -405,34 +509,60 @@ function getMesesDeTrimestre(q) {
 }
 
 // ── Inicializar ────────────────────────────────────────────────────────────
-let charts = {};
-
 function inicializar() {
   document.getElementById('lbl-updated').textContent = 'Actualizado: ' + DATA.generado;
-  construirFiltros();
+
+  // Poblar select de años desde los datos
+  const años = [...new Set(
+    (DATA.tendencia || []).map(t => t.año).filter(Boolean)
+      .concat(DATA.por_año ? Object.keys(DATA.por_año) : [])
+  )].sort();
+
+  const sel = document.getElementById('filtro-año');
+  años.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a; opt.textContent = a;
+    sel.appendChild(opt);
+  });
+
+  construirFiltrosCascada();
   renderTodo();
+  cargarGeoJSON().then(() => construirMapa());
+
   setTimeout(() => {
     document.getElementById('loader').classList.add('hidden');
     animarEntrada();
   }, 1300);
 }
 
-function construirFiltros() {
+// ── Cambio de año: reconstruye trimestres y deptos ─────────────────────────
+function onAñoChange(val) {
+  filtroAño  = val;
+  filtroTrim = 'all';
+  filtroDepto= 'all';
+  construirFiltrosCascada();
+  renderTodo();
+  actualizarMapaColores();
+}
+
+function construirFiltrosCascada() {
+  const trimBase = getTrimestresDeAño(filtroAño);
+  const deptoBase = getDeptosDeAño(filtroAño);
+
   // Trimestres
   const trimContainer = document.getElementById('filtros-trim');
   trimContainer.innerHTML = '';
-  const btnAll = crearChip('Todos', 'all', 'trim', true);
-  trimContainer.appendChild(btnAll);
-  DATA.trimestres.forEach(t => {
-    trimContainer.appendChild(crearChip(t.label.split(' ')[0], t.trimestre, 'trim', false));
+  trimContainer.appendChild(crearChip('Todos', 'all', 'trim', true));
+  trimBase.forEach(t => {
+    trimContainer.appendChild(crearChip(t.label ? t.label.split(' ')[0] : t.trimestre, t.trimestre, 'trim', false));
   });
 
   // Deptos
   const deptoContainer = document.getElementById('filtros-depto');
   deptoContainer.innerHTML = '';
   deptoContainer.appendChild(crearChip('Todos', 'all', 'depto', true));
-  DATA.departamentos.filter(d => d.unicos > 0).forEach(d => {
-    deptoContainer.appendChild(crearChip(d.ciudad, d.depto, 'depto', false));
+  deptoBase.filter(d => d.unicos > 0).forEach(d => {
+    deptoContainer.appendChild(crearChip(d.depto, d.depto, 'depto', false));
   });
 }
 
@@ -444,11 +574,13 @@ function crearChip(label, value, tipo, active) {
   el.addEventListener('click', () => {
     if (tipo === 'trim') filtroTrim = value;
     else filtroDepto = value;
-    // Update chips
-    const container = tipo === 'trim' ? document.getElementById('filtros-trim') : document.getElementById('filtros-depto');
+    const container = tipo === 'trim'
+      ? document.getElementById('filtros-trim')
+      : document.getElementById('filtros-depto');
     container.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
     el.classList.add('active');
     renderTodo();
+    actualizarMapaColores();
   });
   return el;
 }
@@ -469,11 +601,11 @@ function renderTodo() {
 // ── KPIs ───────────────────────────────────────────────────────────────────
 function renderKPIs(d) {
   const kpis = [
-    { icon:'👥', label:'Pacientes Atendidos', val: d.kpis.total_pacientes, sub:'Pacientes únicos', cls:'kpi-0' },
-    { icon:'🔪', label:'Pacientes Operados',  val: d.kpis.total_operados,  sub:'Cirugías realizadas', cls:'kpi-1' },
-    { icon:'📋', label:'Procedimientos',      val: d.kpis.total_procedimientos, sub:'Total procedimientos', cls:'kpi-2' },
-    { icon:'🆕', label:'Pacientes Nuevos',    val: d.kpis.total_nuevos,    sub:'Primera vez en programa', cls:'kpi-3' },
-    { icon:'📅', label:'Citas Totales',       val: d.kpis.total_citas,     sub:'Todas las especialidades', cls:'kpi-4' },
+    { icon:'👥', label:'Pacientes Atendidos', val: d.kpis.total_pacientes,      sub:'Pacientes únicos',        cls:'kpi-0' },
+    { icon:'🔪', label:'Pacientes Operados',  val: d.kpis.total_operados,       sub:'Cirugías realizadas',     cls:'kpi-1' },
+    { icon:'📋', label:'Procedimientos',      val: d.kpis.total_procedimientos, sub:'Total procedimientos',    cls:'kpi-2' },
+    { icon:'🆕', label:'Pacientes Nuevos',    val: d.kpis.total_nuevos,         sub:'Primera vez en programa', cls:'kpi-3' },
+    { icon:'📅', label:'Citas Totales',       val: d.kpis.total_citas,          sub:'Todas las especialidades',cls:'kpi-4' },
   ];
   const grid = document.getElementById('kpi-grid');
   grid.innerHTML = '';
@@ -483,7 +615,7 @@ function renderKPIs(d) {
     el.innerHTML = `
       <div class="kpi-icon">${k.icon}</div>
       <div class="kpi-label">${k.label}</div>
-      <div class="kpi-value">${k.val.toLocaleString('es-CO')}</div>
+      <div class="kpi-value">${(k.val||0).toLocaleString('es-CO')}</div>
       <div class="kpi-sub">${k.sub}</div>`;
     grid.appendChild(el);
     setTimeout(() => el.classList.add('visible'), i * 80);
@@ -493,128 +625,100 @@ function renderKPIs(d) {
 // ── Tendencia ──────────────────────────────────────────────────────────────
 function renderTendencia(d) {
   const labels = d.tendencia.map(t => t.mes.slice(0,3));
-  const datasets = [
-    { label:'Atendidos',      data: d.tendencia.map(t=>t.unicos),         borderColor:C.azul,    backgroundColor:C.azul+'18',    fill:true, tension:.4, pointRadius:4, pointHoverRadius:6 },
-    { label:'Operados',       data: d.tendencia.map(t=>t.operados),       borderColor:C.naranja, backgroundColor:C.naranja+'18', fill:true, tension:.4, pointRadius:4, pointHoverRadius:6 },
-    { label:'Procedimientos', data: d.tendencia.map(t=>t.procedimientos), borderColor:C.teal2,   backgroundColor:C.teal2+'18',   fill:true, tension:.4, pointRadius:4, pointHoverRadius:6 },
-  ];
-  renderChart('chart-tendencia', 'line', { labels, datasets }, {
+  renderChart('chart-tendencia', 'line', { labels, datasets:[
+    { label:'Atendidos',      data:d.tendencia.map(t=>t.unicos),         borderColor:C.azul,    backgroundColor:C.azul+'18',    fill:true,tension:.4,pointRadius:4,pointHoverRadius:6 },
+    { label:'Operados',       data:d.tendencia.map(t=>t.operados),       borderColor:C.naranja, backgroundColor:C.naranja+'18', fill:true,tension:.4,pointRadius:4,pointHoverRadius:6 },
+    { label:'Procedimientos', data:d.tendencia.map(t=>t.procedimientos), borderColor:C.teal2,   backgroundColor:C.teal2+'18',   fill:true,tension:.4,pointRadius:4,pointHoverRadius:6 },
+  ]}, {
     plugins:{ legend:{ display:true, position:'top', labels:{ boxWidth:10, font:{ size:11 }, padding:16 }}},
-    scales:{ y:{ beginAtZero:true, grid:{ color:'#f0ede8' }, ticks:{ font:{ size:10 }}}, x:{ grid:{ display:false }, ticks:{ font:{ size:10 }}}},
+    scales:{ y:{ beginAtZero:true, grid:{ color:'#f0ede8' }, ticks:{ font:{size:10}}}, x:{ grid:{ display:false }, ticks:{ font:{size:10}}}},
   });
 }
 
 // ── Especialidades ─────────────────────────────────────────────────────────
 function renderEspecialidades(d) {
-  const top = d.especialidades.slice(0, 10);
-  renderChart('chart-especialidades', 'bar', {
-    labels: top.map(e => e.nombre.replace('Taller ','T. ')),
-    datasets:[{ data: top.map(e=>e.citas), backgroundColor: top.map((_,i) => PALETTE[i % PALETTE.length] + 'CC'), borderRadius:6, borderSkipped:false }]
-  }, {
+  const top = d.especialidades.slice(0,10);
+  renderChart('chart-especialidades','bar',{
+    labels: top.map(e=>e.nombre.replace('Taller ','T. ')),
+    datasets:[{ data:top.map(e=>e.citas), backgroundColor:top.map((_,i)=>PALETTE[i%PALETTE.length]+'CC'), borderRadius:6, borderSkipped:false }]
+  },{
     indexAxis:'y',
-    plugins:{ tooltip:{ callbacks:{ label: ctx => ' ' + ctx.parsed.x.toLocaleString('es-CO') + ' citas' }}},
-    scales:{ x:{ beginAtZero:true, grid:{ color:'#f0ede8' }, ticks:{ font:{ size:10 }}}, y:{ grid:{ display:false }, ticks:{ font:{ size:10 }}}},
+    plugins:{ tooltip:{ callbacks:{ label: ctx=>' '+ctx.parsed.x.toLocaleString('es-CO')+' citas' }}},
+    scales:{ x:{ beginAtZero:true, grid:{ color:'#f0ede8' }, ticks:{ font:{size:10}}}, y:{ grid:{ display:false }, ticks:{ font:{size:10}}}},
   });
 }
 
 // ── Donut demografía ───────────────────────────────────────────────────────
 function renderDonut(d) {
   const dem = d.demografia;
-  const total = dem.ninos + dem.ninas + dem.adultos_f + dem.adultos_m || 1;
-  const vals  = [dem.ninos, dem.ninas, dem.adultos_f, dem.adultos_m];
-  const labels= ['Niños','Niñas','Adultos F.','Adultos M.'];
-  const colors= [C.azul, C.teal2, C.naranja, C.verde];
-
-  renderChart('chart-donut', 'doughnut', {
-    labels,
-    datasets:[{ data: vals, backgroundColor: colors, borderWidth:2, borderColor:'white', hoverOffset:6 }]
-  }, {
+  const total = dem.ninos+dem.ninas+dem.adultos_f+dem.adultos_m||1;
+  const vals=[dem.ninos,dem.ninas,dem.adultos_f,dem.adultos_m];
+  const labels=['Niños','Niñas','Adultos F.','Adultos M.'];
+  const colors=[C.azul,C.teal2,C.naranja,C.verde];
+  renderChart('chart-donut','doughnut',{ labels, datasets:[{ data:vals, backgroundColor:colors, borderWidth:2, borderColor:'white', hoverOffset:6 }]},{
     cutout:'65%',
-    plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString('es-CO')} (${Math.round(ctx.parsed/total*100)}%)` }}},
+    plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx=>` ${ctx.label}: ${ctx.parsed.toLocaleString('es-CO')} (${Math.round(ctx.parsed/total*100)}%)` }}},
   });
-
-  document.getElementById('donut-center-val').textContent = Math.round(dem.ninos/total*100) + '%';
-
+  document.getElementById('donut-center-val').textContent = Math.round(dem.ninos/total*100)+'%';
   const leg = document.getElementById('donut-legend');
-  leg.innerHTML = '';
+  leg.innerHTML='';
   labels.forEach((l,i) => {
-    const pct = Math.round(vals[i]/total*100);
-    leg.innerHTML += `
-      <div class="legend-item">
-        <div class="legend-dot" style="background:${colors[i]}"></div>
-        <span class="legend-name">${l}</span>
-        <span class="legend-val">${vals[i].toLocaleString('es-CO')}</span>
-        <span class="legend-pct">${pct}%</span>
-      </div>`;
+    const pct=Math.round(vals[i]/total*100);
+    leg.innerHTML+=`<div class="legend-item"><div class="legend-dot" style="background:${colors[i]}"></div><span class="legend-name">${l}</span><span class="legend-val">${vals[i].toLocaleString('es-CO')}</span><span class="legend-pct">${pct}%</span></div>`;
   });
 }
 
-// ── Comunidades por mes ────────────────────────────────────────────────────
+// ── Comunidades ────────────────────────────────────────────────────────────
 function renderComunidades(d) {
-  const labels = d.tendencia.map(t => t.mes.slice(0,3));
-  renderChart('chart-comunidades', 'bar', {
-    labels,
-    datasets:[
-      { label:'Nuevos',    data: d.tendencia.map(t=>t.nuevos),    backgroundColor: C.azul+'CC',    borderRadius:4 },
-      { label:'Migrantes', data: d.tendencia.map(t=>t.migrantes), backgroundColor: C.naranja+'CC', borderRadius:4 },
-      { label:'Indígenas', data: d.tendencia.map(t=>t.indigenas), backgroundColor: C.teal2+'CC',   borderRadius:4 },
-    ]
-  }, {
-    plugins:{ legend:{ display:true, position:'top', labels:{ boxWidth:10, font:{ size:10 }, padding:12 }}},
-    scales:{
-      x:{ stacked:true, grid:{ display:false }, ticks:{ font:{ size:10 }}},
-      y:{ stacked:true, beginAtZero:true, grid:{ color:'#f0ede8' }, ticks:{ font:{ size:10 }}}
-    },
+  const labels=d.tendencia.map(t=>t.mes.slice(0,3));
+  renderChart('chart-comunidades','bar',{ labels, datasets:[
+    { label:'Nuevos',    data:d.tendencia.map(t=>t.nuevos),    backgroundColor:C.azul+'CC',    borderRadius:4 },
+    { label:'Migrantes', data:d.tendencia.map(t=>t.migrantes), backgroundColor:C.naranja+'CC', borderRadius:4 },
+    { label:'Indígenas', data:d.tendencia.map(t=>t.indigenas), backgroundColor:C.teal2+'CC',   borderRadius:4 },
+  ]},{
+    plugins:{ legend:{ display:true, position:'top', labels:{ boxWidth:10, font:{size:10}, padding:12 }}},
+    scales:{ x:{ stacked:true, grid:{ display:false }, ticks:{ font:{size:10}}}, y:{ stacked:true, beginAtZero:true, grid:{ color:'#f0ede8' }, ticks:{ font:{size:10}}}},
   });
 }
 
 // ── Tabla departamentos ────────────────────────────────────────────────────
 function renderDeptTable(d) {
-  const tbl = document.getElementById('dept-table');
-  const maxVal = Math.max(...d.departamentos.map(x=>x.unicos), 1);
-  tbl.innerHTML = '';
-  const deptColors = [C.azul, C.teal2, C.naranja, C.verde, C.morado, C.oro, C.rojo, C.gris];
-  d.departamentos.slice(0,8).forEach((dep, i) => {
-    const pct = Math.round(dep.unicos / maxVal * 100);
-    tbl.innerHTML += `
+  const tbl=document.getElementById('dept-table');
+  const maxVal=Math.max(...d.departamentos.map(x=>x.unicos),1);
+  tbl.innerHTML='';
+  const deptColors=[C.azul,C.teal2,C.naranja,C.verde,C.morado,C.oro,C.rojo,C.gris];
+  d.departamentos.slice(0,8).forEach((dep,i)=>{
+    const pct=Math.round(dep.unicos/maxVal*100);
+    tbl.innerHTML+=`
       <div class="dept-row">
-        <div>
-          <div class="dept-name">${dep.depto}</div>
-          <div class="dept-city">${dep.ciudad}</div>
-        </div>
-        <div class="dept-bar-wrap">
-          <div class="dept-bar" style="width:${pct}%;background:${deptColors[i % deptColors.length]}"></div>
-        </div>
+        <div><div class="dept-name">${dep.depto}</div><div class="dept-city">${dep.ciudad}</div></div>
+        <div class="dept-bar-wrap"><div class="dept-bar" style="width:${pct}%;background:${deptColors[i%deptColors.length]}"></div></div>
         <div class="dept-val">${dep.unicos.toLocaleString('es-CO')}</div>
       </div>`;
   });
 }
 
-// ── Trimestral barras agrupadas ────────────────────────────────────────────
+// ── Trimestral ─────────────────────────────────────────────────────────────
 function renderTrimestral(d) {
-  const labels = d.trimestres.map(t => t.label.split(' ')[0]);
-  renderChart('chart-trimestral', 'bar', {
-    labels,
-    datasets:[
-      { label:'Atendidos',      data: d.trimestres.map(t=>t.unicos),          backgroundColor: C.azul+'CC',    borderRadius:6 },
-      { label:'Operados',       data: d.trimestres.map(t=>t.operados),        backgroundColor: C.naranja+'CC', borderRadius:6 },
-      { label:'Procedimientos', data: d.trimestres.map(t=>t.procedimientos),  backgroundColor: C.teal2+'CC',   borderRadius:6 },
-      { label:'Nuevos',         data: d.trimestres.map(t=>t.nuevos),          backgroundColor: C.verde+'CC',   borderRadius:6 },
-    ]
-  }, {
-    plugins:{ legend:{ display:true, position:'top', labels:{ boxWidth:10, font:{ size:11 }, padding:14 }}},
-    scales:{ x:{ grid:{ display:false }, ticks:{ font:{ size:11 }}}, y:{ beginAtZero:true, grid:{ color:'#f0ede8' }, ticks:{ font:{ size:11 }}}},
+  const labels=d.trimestres.map(t=>t.label?t.label.split(' ')[0]:t.trimestre);
+  renderChart('chart-trimestral','bar',{ labels, datasets:[
+    { label:'Atendidos',      data:d.trimestres.map(t=>t.unicos),          backgroundColor:C.azul+'CC',    borderRadius:6 },
+    { label:'Operados',       data:d.trimestres.map(t=>t.operados),        backgroundColor:C.naranja+'CC', borderRadius:6 },
+    { label:'Procedimientos', data:d.trimestres.map(t=>t.procedimientos),  backgroundColor:C.teal2+'CC',   borderRadius:6 },
+    { label:'Nuevos',         data:d.trimestres.map(t=>t.nuevos),          backgroundColor:C.verde+'CC',   borderRadius:6 },
+  ]},{
+    plugins:{ legend:{ display:true, position:'top', labels:{ boxWidth:10, font:{size:11}, padding:14 }}},
+    scales:{ x:{ grid:{ display:false }, ticks:{ font:{size:11}}}, y:{ beginAtZero:true, grid:{ color:'#f0ede8' }, ticks:{ font:{size:11}}}},
   });
 }
 
-// ── Cards de trimestre ─────────────────────────────────────────────────────
 function renderTrimCards(d) {
-  const grid = document.getElementById('trim-grid');
-  grid.innerHTML = '';
-  d.trimestres.forEach(t => {
-    grid.innerHTML += `
+  const grid=document.getElementById('trim-grid');
+  grid.innerHTML='';
+  d.trimestres.forEach(t=>{
+    grid.innerHTML+=`
       <div class="trim-card">
-        <div class="trim-label">${t.label}</div>
+        <div class="trim-label">${t.label||t.trimestre}</div>
         <div class="trim-stat"><span class="trim-stat-label">👥 Pacientes</span><span class="trim-stat-val">${t.unicos.toLocaleString('es-CO')}</span></div>
         <div class="trim-stat"><span class="trim-stat-label">🔪 Operados</span><span class="trim-stat-val">${t.operados.toLocaleString('es-CO')}</span></div>
         <div class="trim-stat"><span class="trim-stat-label">📋 Procedimientos</span><span class="trim-stat-val">${t.procedimientos.toLocaleString('es-CO')}</span></div>
@@ -623,46 +727,233 @@ function renderTrimCards(d) {
   });
 }
 
-// ── Pie comunidad vulnerable ───────────────────────────────────────────────
 function renderComunidadPie(d) {
-  const mig = d.kpis.migrantes;
-  const ind = d.kpis.indigenas;
-  const rest = Math.max(0, d.kpis.total_pacientes - mig - ind);
-  renderChart('chart-comunidad-pie', 'pie', {
+  const mig=d.kpis.migrantes, ind=d.kpis.indigenas;
+  const rest=Math.max(0,d.kpis.total_pacientes-mig-ind);
+  renderChart('chart-comunidad-pie','pie',{
     labels:['Migrantes','Indígenas','Población general'],
-    datasets:[{ data:[mig, ind, rest], backgroundColor:[C.naranja, C.teal2, C.azul+'44'], borderWidth:2, borderColor:'white' }]
-  }, {
-    plugins:{ legend:{ display:true, position:'bottom', labels:{ boxWidth:10, font:{ size:11 }, padding:12 }}}
-  });
+    datasets:[{ data:[mig,ind,rest], backgroundColor:[C.naranja,C.teal2,C.azul+'44'], borderWidth:2, borderColor:'white' }]
+  },{ plugins:{ legend:{ display:true, position:'bottom', labels:{ boxWidth:10, font:{size:11}, padding:12 }}}});
 }
 
-// ── Utilidad: renderizar/actualizar chart ──────────────────────────────────
-function renderChart(id, type, chartData, options) {
-  const canvas = document.getElementById(id);
-  if (!canvas) return;
-  if (charts[id]) { charts[id].destroy(); }
-  charts[id] = new Chart(canvas, {
-    type,
-    data: chartData,
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      animation: { duration: 500 },
-      plugins: {
-        tooltip: { backgroundColor:'rgba(0,45,98,.9)', padding:10, cornerRadius:8, titleFont:{ size:12 }, bodyFont:{ size:11 } },
-        ...( options.plugins || {} )
-      },
-      scales: options.scales || {},
-      ...( options.indexAxis ? { indexAxis: options.indexAxis } : {} ),
-      ...(options.cutout ? { cutout: options.cutout } : {}),
+// ── Chart helper ───────────────────────────────────────────────────────────
+function renderChart(id,type,chartData,options) {
+  const canvas=document.getElementById(id);
+  if(!canvas) return;
+  if(charts[id]){ charts[id].destroy(); }
+  charts[id]=new Chart(canvas,{
+    type, data:chartData,
+    options:{
+      responsive:true, maintainAspectRatio:true, animation:{duration:500},
+      plugins:{ tooltip:{ backgroundColor:'rgba(0,45,98,.9)', padding:10, cornerRadius:8, titleFont:{size:12}, bodyFont:{size:11} }, ...(options.plugins||{}) },
+      scales:options.scales||{},
+      ...(options.indexAxis?{indexAxis:options.indexAxis}:{}),
+      ...(options.cutout?{cutout:options.cutout}:{}),
     }
   });
 }
 
+// ── MAPA D3 + GeoJSON ─────────────────────────────────────────────────────
+const DEPTO_MAP = {
+  'Bogotá D.C':      'Bogotá D.C.',
+  'Guajira':         'La Guajira',
+  'Cordoba':         'Córdoba',
+  'Cauca':           'Cauca',
+  'Boyacá':          'Boyacá',
+  'Cundinamarca':    'Cundinamarca',
+  'Valle del cauca': 'Valle del Cauca',
+  'Bolivar':         'Bolívar',
+};
+
+let geoData = null;  // GeoJSON cargado una vez
+
+async function cargarGeoJSON() {
+  try {
+    const res = await fetch('colombia.geojson?t=' + Date.now());
+    geoData = await res.json();
+  } catch(e) {
+    console.warn('No se pudo cargar colombia.geojson:', e);
+  }
+}
+
+function construirMapa() {
+  if (!geoData) { cargarGeoJSON().then(() => construirMapa()); return; }
+
+  const container = document.getElementById('colombia-map');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const d = filtrarDatos();
+  const deptoData = {};
+  d.departamentos.forEach(dep => {
+    const nombre = DEPTO_MAP[dep.depto] || dep.depto;
+    deptoData[nombre] = dep;
+  });
+  const maxUnicos = Math.max(...d.departamentos.map(x => x.unicos), 1);
+
+  // Color scale: gris claro → azul profundo según intensidad
+  const colorScale = d3.scaleSequential()
+    .domain([0, maxUnicos])
+    .interpolator(d3.interpolate('#C8DFF5', '#002D62'));
+
+  const width  = container.clientWidth  || 400;
+  const height = container.clientHeight || 420;
+
+  const svg = d3.select(container)
+    .append('svg')
+    .attr('viewBox', `0 0 ${width} ${height}`)
+    .attr('preserveAspectRatio', 'xMidYMid meet')
+    .style('width', '100%')
+    .style('height', '100%');
+
+  // Proyección centrada en Colombia
+  const projection = d3.geoMercator()
+    .center([-74.0, 4.5])
+    .scale(Math.min(width, height) * 2.8)
+    .translate([width / 2, height / 2]);
+
+  const path = d3.geoPath().projection(projection);
+
+  // Grupo de departamentos
+  const g = svg.append('g');
+
+  g.selectAll('path')
+    .data(geoData.features)
+    .enter()
+    .append('path')
+    .attr('class', 'dept-path')
+    .attr('d', path)
+    .attr('data-depto', f => f.properties.NOMBRE)
+    .attr('fill', f => {
+      const info = deptoData[f.properties.NOMBRE];
+      return (info && info.unicos > 0) ? colorScale(info.unicos) : '#E8E4DC';
+    })
+    .style('cursor', f => {
+      const info = deptoData[f.properties.NOMBRE];
+      return (info && info.unicos > 0) ? 'pointer' : 'default';
+    })
+    .on('mousemove', function(event, f) {
+      const info = deptoData[f.properties.NOMBRE];
+      mostrarTooltip(event, f.properties.NOMBRE, info);
+      // Highlight
+      d3.select(this).attr('fill', '#F47920');
+    })
+    .on('mouseleave', function(event, f) {
+      ocultarTooltip();
+      const info = deptoData[f.properties.NOMBRE];
+      d3.select(this).attr('fill',
+        (info && info.unicos > 0) ? colorScale(info.unicos) : '#E8E4DC'
+      );
+    })
+    .on('click', function(event, f) {
+      const info = deptoData[f.properties.NOMBRE];
+      if (!info || info.unicos === 0) return;
+      // Reset all paths
+      g.selectAll('path').classed('selected', false);
+      d3.select(this).classed('selected', true);
+      seleccionarDepto(f.properties.NOMBRE, info);
+    });
+
+  // Labels para departamentos grandes
+  const labelDepts = new Set(['Bogotá D.C.','La Guajira','Antioquia','Valle del Cauca',
+    'Cundinamarca','Córdoba','Cauca','Boyacá','Meta','Nariño','Amazonas','Vichada','Caquetá']);
+
+  g.selectAll('text')
+    .data(geoData.features.filter(f => labelDepts.has(f.properties.NOMBRE)))
+    .enter()
+    .append('text')
+    .attr('transform', f => {
+      const c = path.centroid(f);
+      return `translate(${c[0]},${c[1]})`;
+    })
+    .attr('text-anchor', 'middle')
+    .attr('dominant-baseline', 'middle')
+    .attr('font-size', f => {
+      const big = ['Amazonas','Vichada','Caquetá','Meta','Antioquia'];
+      return big.includes(f.properties.NOMBRE) ? '9' : '7';
+    })
+    .attr('font-family', 'DM Sans, sans-serif')
+    .attr('font-weight', '600')
+    .attr('fill', f => {
+      const info = deptoData[f.properties.NOMBRE];
+      return (info && info.unicos > 0) ? 'white' : '#999';
+    })
+    .attr('pointer-events', 'none')
+    .text(f => {
+      const n = f.properties.NOMBRE;
+      const short = { 'Bogotá D.C.':'Bogotá','La Guajira':'Guajira','Valle del Cauca':'Valle',
+        'Cundinamarca':'Cund.','Norte de Santander':'N.Stder' };
+      return short[n] || (n.length > 10 ? n.split(' ').pop() : n);
+    });
+
+  // Leyenda de escala de color
+  const lgW = 120, lgH = 10;
+  const lgX = width - lgW - 16, lgY = height - 32;
+
+  const defs = svg.append('defs');
+  const grad = defs.append('linearGradient').attr('id','map-grad');
+  grad.append('stop').attr('offset','0%').attr('stop-color','#C8DFF5');
+  grad.append('stop').attr('offset','100%').attr('stop-color','#002D62');
+
+  svg.append('rect').attr('x',lgX).attr('y',lgY).attr('width',lgW).attr('height',lgH)
+    .attr('rx',4).attr('fill','url(#map-grad)').attr('stroke','#ddd').attr('stroke-width','0.5');
+  svg.append('text').attr('x',lgX).attr('y',lgY-4).attr('font-size','8')
+    .attr('fill','#888').attr('font-family','DM Sans,sans-serif').text('Menor cobertura');
+  svg.append('text').attr('x',lgX+lgW).attr('y',lgY-4).attr('font-size','8')
+    .attr('fill','#888').attr('font-family','DM Sans,sans-serif').attr('text-anchor','end').text('Mayor cobertura');
+}
+
+function mostrarTooltip(event, nombre, info) {
+  const tt = document.getElementById('map-tooltip');
+  if (!info || info.unicos === 0) {
+    tt.innerHTML = `<h4>${nombre}</h4><div style="color:rgba(255,255,255,.5);font-size:11px">Sin datos registrados</div>`;
+  } else {
+    tt.innerHTML = `
+      <h4>${nombre}</h4>
+      <div class="tt-row"><span class="tt-label">👥 Pacientes</span><span class="tt-val">${info.unicos.toLocaleString('es-CO')}</span></div>
+      <div class="tt-row"><span class="tt-label">🔪 Operados</span><span class="tt-val">${info.operados.toLocaleString('es-CO')}</span></div>
+      <div class="tt-row"><span class="tt-label">📋 Procedimientos</span><span class="tt-val">${info.procedimientos.toLocaleString('es-CO')}</span></div>
+      <div class="tt-row"><span class="tt-label">📍 Ciudad</span><span class="tt-val">${info.ciudad}</span></div>`;
+  }
+  tt.classList.add('visible');
+  tt.style.left = (event.clientX + 16) + 'px';
+  tt.style.top  = (event.clientY - 10) + 'px';
+}
+
+function ocultarTooltip() {
+  document.getElementById('map-tooltip').classList.remove('visible');
+}
+
+function seleccionarDepto(nombre, info) {
+  mapDeptSelected = nombre;
+  const panel = document.getElementById('map-panel');
+  if (!info || info.unicos === 0) {
+    panel.innerHTML = `<h4>📍 ${nombre}</h4><div class="map-hint">Sin datos registrados para este departamento.</div>`;
+    return;
+  }
+  const pctOp = info.unicos > 0 ? Math.round(info.operados / info.unicos * 100) : 0;
+  const maxU   = Math.max(...(filtrarDatos().departamentos.map(x => x.unicos)), 1);
+  panel.innerHTML = `
+    <h4>📍 ${nombre} <span style="font-size:10px;color:var(--gris);font-family:'DM Sans',sans-serif;font-weight:400">— ${info.ciudad}</span></h4>
+    <div class="map-stat-row"><span class="map-stat-label">👥 Pacientes únicos</span><span class="map-stat-val">${info.unicos.toLocaleString('es-CO')}</span></div>
+    <div class="map-stat-row"><span class="map-stat-label">🔪 Pacientes operados</span><span class="map-stat-val">${info.operados.toLocaleString('es-CO')}</span></div>
+    <div class="map-stat-row"><span class="map-stat-label">📋 Procedimientos</span><span class="map-stat-val">${info.procedimientos.toLocaleString('es-CO')}</span></div>
+    <div class="map-stat-row"><span class="map-stat-label">📊 Tasa de operación</span><span class="map-stat-val" style="color:var(--naranja)">${pctOp}%</span></div>
+    <div style="margin-top:12px">
+      <div style="font-size:10px;color:var(--gris);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Cobertura vs máximo</div>
+      <div style="background:var(--crema2);border-radius:99px;height:8px;overflow:hidden">
+        <div style="height:100%;border-radius:99px;background:var(--azul2);width:${Math.round(info.unicos/maxU*100)}%;transition:width .6s ease"></div>
+      </div>
+    </div>`;
+}
+
+function actualizarMapaColores() {
+  construirMapa();
+}
+
 // ── Animación de entrada ───────────────────────────────────────────────────
 function animarEntrada() {
-  const els = document.querySelectorAll('.fade-in');
-  els.forEach((el, i) => setTimeout(() => el.classList.add('visible'), i * 60));
+  document.querySelectorAll('.fade-in').forEach((el,i) => setTimeout(()=>el.classList.add('visible'), i*60));
 }
 
 // ── Arrancar ───────────────────────────────────────────────────────────────
