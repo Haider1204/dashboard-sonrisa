@@ -1,5 +1,9 @@
 {
   "generado": "2026-03-06",
+  "años": [
+    "2025",
+    "2026"
+  ],
   "kpis": {
     "total_pacientes": 3875,
     "total_operados": 276,
@@ -264,5 +268,398 @@
     "Octubre",
     "Noviembre",
     "Diciembre"
-  ]
+  ],
+  "por_año": {
+    "2025": {
+      "kpis": {
+        "total_pacientes": 2957,
+        "total_operados": 199,
+        "total_procedimientos": 287,
+        "total_nuevos": 148,
+        "migrantes": 73,
+        "indigenas": 61,
+        "total_citas": 11093
+      },
+      "demografia": {
+        "ninos": 1430,
+        "ninas": 1045,
+        "adultos_f": 238,
+        "adultos_m": 244
+      },
+      "tendencia": [
+        {
+          "mes": "Julio",
+          "unicos": 619,
+          "operados": 70,
+          "procedimientos": 108,
+          "migrantes": 12,
+          "indigenas": 40,
+          "nuevos": 23
+        },
+        {
+          "mes": "Agosto",
+          "unicos": 400,
+          "operados": 13,
+          "procedimientos": 21,
+          "migrantes": 12,
+          "indigenas": 1,
+          "nuevos": 11
+        },
+        {
+          "mes": "Septiembre",
+          "unicos": 503,
+          "operados": 37,
+          "procedimientos": 59,
+          "migrantes": 11,
+          "indigenas": 5,
+          "nuevos": 34
+        },
+        {
+          "mes": "Octubre",
+          "unicos": 580,
+          "operados": 38,
+          "procedimientos": 46,
+          "migrantes": 15,
+          "indigenas": 14,
+          "nuevos": 47
+        },
+        {
+          "mes": "Noviembre",
+          "unicos": 466,
+          "operados": 34,
+          "procedimientos": 46,
+          "migrantes": 11,
+          "indigenas": 1,
+          "nuevos": 28
+        },
+        {
+          "mes": "Diciembre",
+          "unicos": 389,
+          "operados": 7,
+          "procedimientos": 7,
+          "migrantes": 12,
+          "indigenas": 0,
+          "nuevos": 5
+        }
+      ],
+      "especialidades": [
+        {
+          "nombre": "Fonoaudiología",
+          "citas": 2194
+        },
+        {
+          "nombre": "Psicología",
+          "citas": 1542
+        },
+        {
+          "nombre": "Cirugía Plástica",
+          "citas": 1221
+        },
+        {
+          "nombre": "Ortodoncia",
+          "citas": 981
+        },
+        {
+          "nombre": "Trabajo Social",
+          "citas": 875
+        },
+        {
+          "nombre": "Taller Psicologia",
+          "citas": 720
+        },
+        {
+          "nombre": "Ortopedía Maxilar",
+          "citas": 643
+        },
+        {
+          "nombre": "Enfermería",
+          "citas": 600
+        },
+        {
+          "nombre": "Pediatría",
+          "citas": 398
+        },
+        {
+          "nombre": "Odontología",
+          "citas": 396
+        },
+        {
+          "nombre": "Anestesia",
+          "citas": 318
+        },
+        {
+          "nombre": "Taller Trabajo Social",
+          "citas": 233
+        },
+        {
+          "nombre": "Ortopedia Pre-quirúrgica",
+          "citas": 216
+        },
+        {
+          "nombre": "Post-operatorio",
+          "citas": 215
+        },
+        {
+          "nombre": "Otorrinolaringología",
+          "citas": 203
+        },
+        {
+          "nombre": "Taller Musicoterapia",
+          "citas": 129
+        },
+        {
+          "nombre": "Taller Fonoaudiología",
+          "citas": 72
+        },
+        {
+          "nombre": "Medicina General",
+          "citas": 61
+        },
+        {
+          "nombre": "Genética",
+          "citas": 55
+        },
+        {
+          "nombre": "Odontopediatría",
+          "citas": 21
+        }
+      ],
+      "departamentos": [
+        {
+          "depto": "Bogotá D.C",
+          "ciudad": "Bogotá D.C",
+          "unicos": 2541,
+          "operados": 92,
+          "procedimientos": 127
+        },
+        {
+          "depto": "Cordoba",
+          "ciudad": "Monteria",
+          "unicos": 174,
+          "operados": 39,
+          "procedimientos": 51
+        },
+        {
+          "depto": "Cauca",
+          "ciudad": "Popayán",
+          "unicos": 99,
+          "operados": 31,
+          "procedimientos": 50
+        },
+        {
+          "depto": "Boyacá",
+          "ciudad": "Duitama",
+          "unicos": 62,
+          "operados": 18,
+          "procedimientos": 27
+        },
+        {
+          "depto": "Valle del cauca",
+          "ciudad": "Palmira",
+          "unicos": 55,
+          "operados": 0,
+          "procedimientos": 0
+        },
+        {
+          "depto": "Cundinamarca",
+          "ciudad": "Facatativa",
+          "unicos": 26,
+          "operados": 19,
+          "procedimientos": 32
+        },
+        {
+          "depto": "Guajira",
+          "ciudad": "Riohacha",
+          "unicos": 0,
+          "operados": 0,
+          "procedimientos": 0
+        },
+        {
+          "depto": "Bolivar",
+          "ciudad": "Cartagena",
+          "unicos": 0,
+          "operados": 0,
+          "procedimientos": 0
+        }
+      ],
+      "trimestres": [
+        {
+          "trimestre": "Q1",
+          "label": "Q1 (Jul–Sep)",
+          "unicos": 1522,
+          "operados": 120,
+          "procedimientos": 188,
+          "nuevos": 68
+        },
+        {
+          "trimestre": "Q2",
+          "label": "Q2 (Oct–Dic)",
+          "unicos": 1435,
+          "operados": 79,
+          "procedimientos": 99,
+          "nuevos": 80
+        }
+      ],
+      "meses_orden": [
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre"
+      ]
+    },
+    "2026": {
+      "kpis": {
+        "total_pacientes": 918,
+        "total_operados": 77,
+        "total_procedimientos": 102,
+        "total_nuevos": 45,
+        "migrantes": 25,
+        "indigenas": 42,
+        "total_citas": 3011
+      },
+      "demografia": {
+        "ninos": 484,
+        "ninas": 308,
+        "adultos_f": 62,
+        "adultos_m": 64
+      },
+      "tendencia": [
+        {
+          "mes": "Enero",
+          "unicos": 471,
+          "operados": 47,
+          "procedimientos": 60,
+          "migrantes": 13,
+          "indigenas": 41,
+          "nuevos": 19
+        },
+        {
+          "mes": "Febrero",
+          "unicos": 447,
+          "operados": 30,
+          "procedimientos": 42,
+          "migrantes": 12,
+          "indigenas": 1,
+          "nuevos": 26
+        }
+      ],
+      "especialidades": [
+        {
+          "nombre": "Fonoaudiología",
+          "citas": 589
+        },
+        {
+          "nombre": "Psicología",
+          "citas": 513
+        },
+        {
+          "nombre": "Cirugía Plástica",
+          "citas": 390
+        },
+        {
+          "nombre": "Taller Psicologia",
+          "citas": 260
+        },
+        {
+          "nombre": "Trabajo Social",
+          "citas": 242
+        },
+        {
+          "nombre": "Enfermería",
+          "citas": 181
+        },
+        {
+          "nombre": "Pediatría",
+          "citas": 180
+        },
+        {
+          "nombre": "Ortodoncia",
+          "citas": 138
+        },
+        {
+          "nombre": "Anestesia",
+          "citas": 86
+        },
+        {
+          "nombre": "Odontología",
+          "citas": 86
+        },
+        {
+          "nombre": "Ortopedía Maxilar",
+          "citas": 80
+        },
+        {
+          "nombre": "Otorrinolaringología",
+          "citas": 62
+        },
+        {
+          "nombre": "Taller Trabajo Social",
+          "citas": 51
+        },
+        {
+          "nombre": "Taller Fonoaudiología",
+          "citas": 49
+        },
+        {
+          "nombre": "Post-operatorio",
+          "citas": 44
+        },
+        {
+          "nombre": "Ortopedia Pre-quirúrgica",
+          "citas": 39
+        },
+        {
+          "nombre": "Genética",
+          "citas": 11
+        },
+        {
+          "nombre": "Taller Musicoterapia",
+          "citas": 9
+        },
+        {
+          "nombre": "Odontopediatría",
+          "citas": 1
+        }
+      ],
+      "departamentos": [
+        {
+          "depto": "Bogotá D.C",
+          "ciudad": "Bogotá D.C",
+          "unicos": 757,
+          "operados": 35,
+          "procedimientos": 44
+        },
+        {
+          "depto": "Guajira",
+          "ciudad": "Riohacha",
+          "unicos": 94,
+          "operados": 25,
+          "procedimientos": 33
+        },
+        {
+          "depto": "Boyacá",
+          "ciudad": "Duitama",
+          "unicos": 67,
+          "operados": 17,
+          "procedimientos": 25
+        }
+      ],
+      "trimestres": [
+        {
+          "trimestre": "Q3",
+          "label": "Q3 (Ene–Feb)",
+          "unicos": 918,
+          "operados": 77,
+          "procedimientos": 102,
+          "nuevos": 45
+        }
+      ],
+      "meses_orden": [
+        "Enero",
+        "Febrero"
+      ]
+    }
+  }
 }
